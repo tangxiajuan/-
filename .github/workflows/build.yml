@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: macos-14
+    defaults:
+      run:
+        working-directory: traffic-alert-ios/ios-app
 
     steps:
       - name: Checkout
@@ -28,13 +31,11 @@ jobs:
 
       - name: Generate Xcode project
         run: |
-          cd ios-app
           xcodegen generate
           ls -la
 
       - name: Build & Archive (ad-hoc)
         run: |
-          cd ios-app
           mkdir -p build
           xcodebuild -project TrafficAlert.xcodeproj \
             -scheme TrafficAlert \
@@ -49,7 +50,6 @@ jobs:
 
       - name: Export .ipa
         run: |
-          cd ios-app
           cat > ExportOptions.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -74,11 +74,10 @@ jobs:
             -exportPath build \
             -exportOptionsPlist ExportOptions.plist \
             -allowProvisioningUpdates \
-            || echo "Export unsigned..."
+            || echo "Export failed - will package manually"
 
       - name: Package .ipa manually when export fails
         run: |
-          cd ios-app
           if [ ! -f build/*.ipa ]; then
             echo "Creating unsigned .ipa manually..."
             mkdir -p build/Payload
@@ -93,4 +92,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TrafficAlert.ipa
-          path: ios-app/build/*.ipa
+          path: traffic-alert-ios/ios-app/build/*.ipa
