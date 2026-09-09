@@ -22,9 +22,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Verify Xcode
-        run: |
-          xcodebuild -version
-          xcrun simctl list devices
+        run: xcodebuild -version
 
       - name: Install xcodegen
         run: brew install xcodegen
@@ -34,7 +32,7 @@ jobs:
           xcodegen generate
           ls -la
 
-      - name: Build & Archive (ad-hoc)
+      - name: Build & Archive (no signing)
         run: |
           mkdir -p build
           xcodebuild -project TrafficAlert.xcodeproj \
@@ -43,53 +41,23 @@ jobs:
             -destination 'generic/platform=iOS' \
             -archivePath build/TrafficAlert.xcarchive \
             archive \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Export .ipa
+      - name: Package .ipa (manual)
         run: |
-          cat > ExportOptions.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>development</string>
-              <key>teamID</key>
-              <string>YOUR_TEAM_ID</string>
-              <key>uploadBitcode</key>
-              <false/>
-              <key>compileBitcode</key>
-              <false/>
-              <key>thinning</key>
-              <string>&lt;none&gt;</string>
-          </dict>
-          </plist>
-          EOF
-
-          xcodebuild -exportArchive \
-            -archivePath build/TrafficAlert.xcarchive \
-            -exportPath build \
-            -exportOptionsPlist ExportOptions.plist \
-            -allowProvisioningUpdates \
-            || echo "Export failed - will package manually"
-
-      - name: Package .ipa manually when export fails
-        run: |
-          if [ ! -f build/*.ipa ]; then
-            echo "Creating unsigned .ipa manually..."
-            mkdir -p build/Payload
-            cp -r build/TrafficAlert.xcarchive/Products/Applications/TrafficAlert.app build/Payload/
-            cd build
-            zip -r TrafficAlert.ipa Payload/
-            cd ..
-            ls -la build/
-          fi
+          echo "Creating unsigned .ipa..."
+          mkdir -p build/Payload
+          cp -r build/TrafficAlert.xcarchive/Products/Applications/TrafficAlert.app build/Payload/
+          cd build
+          zip -r TrafficAlert.ipa Payload/
+          echo "=== Final .ipa ==="
+          ls -la TrafficAlert.ipa
+          file TrafficAlert.ipa
 
       - name: Upload .ipa
         uses: actions/upload-artifact@v4
         with:
           name: TrafficAlert.ipa
-          path: traffic-alert-ios/ios-app/build/*.ipa
+          path: traffic-alert-ios/ios-app/build/TrafficAlert.ipa
