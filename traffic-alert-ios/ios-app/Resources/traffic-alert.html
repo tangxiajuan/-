@@ -1,0 +1,1031 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="流量预警">
+<meta name="theme-color" content="#6366f1">
+<title>流量预警</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --primary: #6366f1;
+  --primary-light: #818cf8;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --success: #10b981;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #1e293b;
+  --text-sec: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 头部 */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #fff;
+  padding: 24px 20px calc(24px + env(safe-area-inset-top));
+  text-align: center;
+  position: relative;
+}
+.header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.header p { font-size: 13px; opacity: 0.85; }
+
+/* 主内容 */
+.main { padding: 16px; max-width: 480px; margin: 0 auto; }
+
+/* 卡片 */
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-size: 13px; font-weight: 600; color: var(--text-sec);
+  margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* 列表项 */
+.item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.item:last-child { border-bottom: none; }
+.item-info { flex: 1; min-width: 0; margin-right: 12px; }
+.item-name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.item-meta { font-size: 12px; color: var(--text-sec); }
+
+/* 进度条 */
+.progress-wrap { margin-top: 8px; }
+.progress-bar {
+  height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 4px; transition: width 0.4s ease, background 0.3s;
+}
+.progress-text { font-size: 12px; color: var(--text-sec); margin-top: 4px; }
+
+/* 输入组 */
+.input-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.input-row:last-child { margin-bottom: 0; }
+
+input, select {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; font-size: 15px; color: var(--text);
+  background: #fff; outline: none; appearance: none; -webkit-appearance: none;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus { border-color: var(--primary); }
+input::placeholder { color: #94a3b8; }
+.input-suffix {
+  font-size: 14px; color: var(--text-sec); font-weight: 500;
+  min-width: 32px; text-align: center;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 12px; padding: 12px 20px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+  font-family: inherit;
+}
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-outline {
+  background: transparent; color: var(--primary);
+  border: 1.5px solid var(--primary);
+}
+.btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 10px; }
+.btn-xs { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+.btn-full { width: 100%; }
+.btn-icon {
+  width: 36px; height: 36px; padding: 0; border-radius: 10px;
+  background: var(--bg); color: var(--text-sec); font-size: 16px;
+}
+
+/* 弹窗遮罩 */
+.overlay {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+  align-items: flex-end; justify-content: center;
+}
+.overlay.active { display: flex; }
+.sheet {
+  background: #fff; border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 480px; max-height: 85dvh; overflow-y: auto;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sheet-handle {
+  width: 36px; height: 4px; background: #cbd5e1; border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.sheet-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+
+/* 空状态 */
+.empty {
+  text-align: center; padding: 40px 20px; color: var(--text-sec);
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.6; }
+.empty-text { font-size: 14px; }
+
+/* 数字键盘 */
+.num-pad {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0;
+}
+.num-btn {
+  padding: 16px; font-size: 22px; font-weight: 600; border: none;
+  border-radius: 12px; background: var(--bg); color: var(--text);
+  cursor: pointer; font-family: inherit;
+  transition: transform 0.1s;
+}
+.num-btn:active { transform: scale(0.92); }
+.num-btn:active { background: var(--primary-light); color: #fff; }
+
+/* 显示数字 */
+.num-display {
+  text-align: center; font-size: 36px; font-weight: 700; color: var(--primary);
+  padding: 16px 0; min-height: 64px;
+  border-bottom: 1.5px solid var(--border); margin-bottom: 12px;
+}
+
+/* 操作组 */
+.action-row { display: flex; gap: 8px; margin-top: 16px; }
+.action-row .btn { flex: 1; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%;
+  transform: translateX(-50%); background: rgba(30,41,59,0.92);
+  color: #fff; padding: 10px 20px; border-radius: 24px;
+  font-size: 14px; font-weight: 500; z-index: 200;
+  opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  backdrop-filter: blur(10px); white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+/* 删除按钮 */
+.del-btn {
+  background: none; border: none; color: #94a3b8; font-size: 18px;
+  padding: 8px; cursor: pointer; line-height: 1;
+}
+.del-btn:active { color: var(--danger); }
+
+/* 警示横幅 */
+.alert-banner {
+  background: #fef2f2; border: 1px solid #fecaca; color: var(--danger);
+  border-radius: 12px; padding: 12px 14px; font-size: 13px; font-weight: 500;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.alert-banner.warn {
+  background: #fffbeb; border-color: #fde68a; color: #b45309;
+}
+
+/* 标签 */
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; background: var(--primary-light); color: #fff;
+}
+.tag-danger { background: var(--danger); }
+.tag-warn { background: var(--warning); }
+.tag-success { background: var(--success); }
+input[type="file"] { display: none; }
+.header-icon {
+  position: absolute; right: 20px; bottom: 28px;
+  width: 40px; height: 40px; border-radius: 12px;
+  background: rgba(255,255,255,0.2); border: none; color: #fff;
+  font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.header-icon:active { background: rgba(255,255,255,0.35); transform: scale(0.94); }
+.backup-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.backup-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: var(--bg); border-radius: 12px; cursor: pointer;
+}
+.backup-row:active { opacity: 0.7; }
+.backup-row-info { flex: 1; }
+.backup-row-title { font-size: 15px; font-weight: 600; }
+.backup-row-desc { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+.backup-stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px;
+}
+.stat-box {
+  text-align: center; padding: 12px 8px; background: var(--bg); border-radius: 12px;
+}
+.stat-num { font-size: 22px; font-weight: 800; color: var(--primary); }
+.stat-label { font-size: 11px; color: var(--text-sec); margin-top: 2px; }
+
+/* 分类导航栏 */
+.cat-nav {
+  background: var(--card);
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin: 0 -16px 12px;
+  padding: 0 16px;
+}
+.cat-scroll {
+  display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+  padding: 12px 0; scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+.cat-scroll::-webkit-scrollbar { display: none; }
+.cat-tab {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; border: 1.5px solid var(--border);
+  background: var(--bg); color: var(--text-sec); white-space: nowrap;
+}
+.cat-tab.active {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+}
+.cat-tab:active { transform: scale(0.95); }
+.cat-tab .cat-icon { font-size: 14px; }
+.cat-tab .cat-badge {
+  font-size: 10px; background: rgba(0,0,0,0.12); padding: 1px 6px; border-radius: 10px;
+  min-width: 18px; text-align: center;
+}
+.cat-tab.active .cat-badge { background: rgba(255,255,255,0.3); }
+.cat-tab-add { border-style: dashed; color: var(--text-sec); opacity: 0.7; }
+.cat-manage-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.cat-manage-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; background: var(--bg); border-radius: 12px;
+}
+.cat-manage-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; background: #fff; border: 1.5px solid var(--border);
+}
+.cat-manage-info { flex: 1; }
+.cat-manage-name { font-size: 15px; font-weight: 600; }
+.cat-manage-count { font-size: 12px; color: var(--text-sec); }
+.cat-manage-actions { display: flex; gap: 4px; }
+.icon-btn {
+  width: 32px; height: 32px; border-radius: 8px; border: none;
+  background: transparent; cursor: pointer; font-size: 14px; color: var(--text-sec);
+  display: flex; align-items: center; justify-content: center;
+}
+.icon-btn:active { background: var(--border); }
+.icon-btn.danger:active { background: #fef2f2; color: var(--danger); }
+.cat-edit-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.cat-edit-row input { margin-bottom: 0; }
+.cat-icon-grid {
+  display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 12px;
+}
+.cat-icon-option {
+  aspect-ratio: 1; border: 1.5px solid var(--border); border-radius: 10px;
+  background: var(--bg); font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.cat-icon-option.selected { border-color: var(--primary); background: #eef2ff; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>流量预警助手</h1>
+  <p>追踪流量 / 套餐 / 电费 各种上限</p>
+  <button class="header-icon" onclick="showBackupSheet()">⋯</button>
+</div>
+
+<!-- 分类导航栏 -->
+<div class="cat-nav">
+  <div class="cat-scroll" id="catNav"></div>
+</div>
+
+<div class="main">
+  <!-- 警示横幅 -->
+  <div id="alertBanners"></div>
+
+  <!-- 项目列表 -->
+  <div id="itemsList"></div>
+
+  <!-- 添加按钮 -->
+  <button class="btn btn-full btn-primary" onclick="openAdd()" style="margin-top:8px">
+    ＋ 添加新项目
+  </button>
+</div>
+
+<!-- 分类管理弹窗 -->
+<div class="overlay" id="catOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">📁 分类管理</div>
+    <div class="cat-manage-list" id="catManageList"></div>
+    <div style="border-top:1px solid var(--border);padding-top:16px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px">新建分类</div>
+      <div class="cat-edit-row">
+        <div class="cat-icon-grid" id="catIconGrid"></div>
+      </div>
+      <div class="cat-edit-row">
+        <input type="text" id="catNewName" placeholder="分类名称" maxlength="10">
+        <button class="btn btn-sm btn-primary" onclick="saveCategory()" style="flex-shrink:0">添加</button>
+      </div>
+    </div>
+    <button class="btn btn-full" onclick="closeCat()" style="background:var(--bg);color:var(--text-sec);margin-top:12px">关闭</button>
+  </div>
+</div>
+
+<!-- 添加/编辑弹窗 -->
+<div class="overlay" id="addOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="addTitle">添加新项目</div>
+    <div class="input-row">
+      <input type="text" id="fName" placeholder="名称（如：手机套餐）" maxlength="20">
+    </div>
+    <!-- 分类选择 -->
+    <div id="catSelectorRow" style="margin-bottom:10px">
+      <div style="font-size:12px;color:var(--text-sec);margin-bottom:6px;font-weight:600">选择分类</div>
+      <div id="catSelectorTabs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div class="input-row">
+      <input type="text" id="fLimit" placeholder="上限数值" inputmode="decimal">
+    </div>
+    <div class="input-row">
+      <select id="fUnit">
+        <option value="GB">GB</option>
+        <option value="MB">MB</option>
+        <option value="KB">KB</option>
+        <option value="元">元</option>
+        <option value="度">度</option>
+        <option value="分钟">分钟</option>
+        <option value="GB/月">GB/月</option>
+        <option value="次">次</option>
+        <option value="custom">自定义...</option>
+      </select>
+    </div>
+    <div class="input-row" id="customUnitRow" style="display:none">
+      <input type="text" id="fCustomUnit" placeholder="自定义单位" maxlength="6">
+    </div>
+    <div class="input-row">
+      <input type="number" id="fWarn" placeholder="预警阈值（%，默认80）" min="1" max="99">
+    </div>
+    <div class="action-row">
+      <button class="btn btn-outline" onclick="closeAdd()">取消</button>
+      <button class="btn btn-primary" onclick="saveItem()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 录入数值弹窗 -->
+<div class="overlay" id="logOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="logTitle">记录用量</div>
+    <div class="input-row">
+      <span class="input-suffix" id="logUnitLabel">GB</span>
+      <input type="text" id="logAmount" placeholder="输入数值（累计已用）" inputmode="decimal">
+    </div>
+    <div class="input-row">
+      <input type="text" id="logNote" placeholder="备注（可选）" maxlength="30">
+    </div>
+    <div class="action-row">
+      <button class="btn btn-outline" onclick="closeLog()">取消</button>
+      <button class="btn btn-primary" onclick="saveLog()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- 重置用量弹窗 -->
+<div class="overlay" id="resetOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">重置用量</div>
+    <p style="color:var(--text-sec);font-size:14px;margin-bottom:16px">选择重置方式：</p>
+    <button class="btn btn-full btn-outline" onclick="resetUsage('zero')" style="margin-bottom:8px">
+      🔄 清零重置（新周期）
+    </button>
+    <button class="btn btn-full btn-danger" onclick="resetUsage('delete')" style="margin-bottom:8px">
+      🗑️ 删除项目
+    </button>
+    <button class="btn btn-full" onclick="closeReset()" style="background:var(--bg);color:var(--text-sec)">
+      取消
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 数据管理弹窗 -->
+<div class="overlay" id="backupOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">📦 数据管理</div>
+
+    <div class="backup-stats">
+      <div class="stat-box" style="cursor:pointer" onclick="updateBackupStats()">
+        <div class="stat-num" id="statCount">0</div>
+        <div class="stat-label">项目数</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="statRecords">0</div>
+        <div class="stat-label">记录条数</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="statSize">0KB</div>
+        <div class="stat-label">数据大小</div>
+      </div>
+    </div>
+
+    <div class="backup-list">
+      <div class="backup-row" onclick="exportJSON()">
+        <div class="backup-row-info">
+          <div class="backup-row-title">⬇️ 导出备份 (JSON)</div>
+          <div class="backup-row-desc">保存全部数据到文件</div>
+        </div>
+        <span style="color:var(--primary);font-size:13px">导出 →</span>
+      </div>
+      <div class="backup-row" onclick="exportCSV()">
+        <div class="backup-row-info">
+          <div class="backup-row-title">📊 导出表格 (CSV)</div>
+          <div class="backup-row-desc">Excel 可读的表格格式</div>
+        </div>
+        <span style="color:var(--primary);font-size:13px">导出 →</span>
+      </div>
+      <div class="backup-row" onclick="document.getElementById('importFile').click()">
+        <div class="backup-row-info">
+          <div class="backup-row-title">⬆️ 导入恢复</div>
+          <div class="backup-row-desc">从备份 JSON 文件恢复</div>
+        </div>
+        <span style="color:var(--success);font-size:13px">导入 →</span>
+      </div>
+      <div class="backup-row" onclick="toggleAutoDownload()">
+        <div class="backup-row-info">
+          <div class="backup-row-title">📲 自动存到本地</div>
+          <div class="backup-row-desc" id="autoDlDesc">每次记录后自动下载备份文件</div>
+        </div>
+        <span style="font-size:13px;color:var(--text-sec)" id="autoDlToggle">关闭</span>
+      </div>
+      <div class="backup-row" onclick="showAutoBackups()">
+        <div class="backup-row-info">
+          <div class="backup-row-title">📋 自动备份记录</div>
+          <div class="backup-row-desc" id="autoBackupDesc">每次记录后自动保存</div>
+        </div>
+        <span style="color:var(--primary);font-size:13px" id="autoBackupCount">0 条</span>
+      </div>
+      <div class="backup-row" onclick="clearAllData()">
+        <div class="backup-row-info">
+          <div class="backup-row-title" style="color:var(--danger)">🗑️ 清除全部数据</div>
+          <div class="backup-row-desc">删除所有项目和记录</div>
+        </div>
+        <span style="color:var(--danger);font-size:13px">清除</span>
+      </div>
+    </div>
+
+    <button class="btn btn-full" onclick="closeBackup()" style="background:var(--bg);color:var(--text-sec)">关闭</button>
+  </div>
+</div>
+
+<!-- 自动备份列表面板 -->
+<div class="overlay" id="autoBackupOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">📋 自动备份记录</div>
+    <div class="backup-list" id="autoBackupList"></div>
+    <button class="btn btn-full" onclick="closeAutoBackupList()" style="background:var(--bg);color:var(--text-sec)">关闭</button>
+  </div>
+</div>
+
+<!-- 恢复确认面板 -->
+<div class="overlay" id="restoreConfirmOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">⚠️ 确认恢复</div>
+    <p style="color:var(--text-sec);font-size:14px;margin-bottom:16px" id="restoreConfirmMsg"></p>
+    <div class="action-row">
+      <button class="btn btn-outline" onclick="cancelRestoreAuto()">取消</button>
+      <button class="btn btn-danger" onclick="doRestoreAuto()">确定恢复</button>
+    </div>
+  </div>
+</div>
+
+<!-- 隐藏的文件导入 input -->
+<input type="file" id="importFile" accept=".json" onchange="importJSON(event)">
+<!-- 隐藏的下载链接 -->
+<a id="downloadLink" style="display:none"></a>
+<script>
+const STORAGE_KEY = 'traffic_alert_items';
+const CATS_KEY = 'traffic_alert_categories';
+const AUTO_BACKUP_KEY = 'traffic_alert_auto_backup';
+const AUTO_DL_KEY = 'traffic_alert_auto_dl';
+let currentCatId = null;
+let selectedCatForItem = null;
+let selectedIcon = '📁';
+let pendingRestoreIdx = -1;
+
+// === 分类数据 ===
+function loadCats() {
+  try {
+    const cats = JSON.parse(localStorage.getItem(CATS_KEY));
+    return Array.isArray(cats) ? cats : [];
+  } catch { return []; }
+}
+function saveCats(cats) { localStorage.setItem(CATS_KEY, JSON.stringify(cats)); }
+function findCat(id) { return loadCats().find(c => c.id === id) || null; }
+
+// === 项目数据 ===
+function loadItems() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveItems(items) { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }
+function findItemIdx(id) { return loadItems().findIndex(it => it.id === id); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+function fmt(n) { return isNaN(n) ? '0' : (Number(n) % 1 === 0 ? String(Number(n)) : Number(n).toFixed(2)); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+// === 分类导航 ===
+function renderCatNav() {
+  const cats = loadCats();
+  const items = loadItems();
+  const nav = document.getElementById('catNav');
+  let html = '';
+  html += '<div class="cat-tab ' + (currentCatId === null ? 'active' : '') + '" onclick="switchCat(null)">';
+  html += '<span class="cat-icon">📋</span> 全部<span class="cat-badge">' + items.length + '</span></div>';
+  cats.forEach(cat => {
+    const count = items.filter(it => it.categoryId === cat.id).length;
+    html += '<div class="cat-tab ' + (currentCatId === cat.id ? 'active' : '') + '" onclick="switchCat(\'' + cat.id + '\')">';
+    html += '<span class="cat-icon">' + cat.icon + '</span> ' + cat.name + '<span class="cat-badge">' + count + '</span></div>';
+  });
+  html += '<div class="cat-tab cat-tab-add" onclick="openCatManage()" title="管理分类">＋</div>';
+  nav.innerHTML = html;
+}
+function switchCat(catId) { currentCatId = catId; renderCatNav(); renderList(); renderAlerts(); }
+
+// === 分类管理 ===
+function openCatManage() { renderCatManageList(); renderCatIconGrid(); document.getElementById('catNewName').value = ''; document.getElementById('catOverlay').classList.add('active'); }
+function closeCat() { document.getElementById('catOverlay').classList.remove('active'); }
+
+function renderCatManageList() {
+  const cats = loadCats();
+  const items = loadItems();
+  document.getElementById('catManageList').innerHTML = cats.map(cat => {
+    const cnt = items.filter(it => it.categoryId === cat.id).length;
+    return '<div class="cat-manage-row"><div class="cat-manage-icon">' + cat.icon + '</div><div class="cat-manage-info"><div class="cat-manage-name">' + cat.name + '</div><div class="cat-manage-count">' + cnt + ' 个项目</div></div><div class="cat-manage-actions"><button class="icon-btn" onclick="deleteCat(\'' + cat.id + '\')">🗑</button></div></div>';
+  }).join('');
+}
+
+const ICONS = ['📁','📱','💡','🔌','💧','🚗','🏠','🍔','👕','🎮','✈️','📞','🌐','💰','⏰','🔑','🛒','🎬','💊','📚'];
+function renderCatIconGrid() {
+  document.getElementById('catIconGrid').innerHTML = ICONS.map(ic => '<div class="cat-icon-option ' + (ic === selectedIcon ? 'selected' : '') + '" onclick="selectIcon(\'' + ic + '\')">' + ic + '</div>').join('');
+}
+function selectIcon(ic) { selectedIcon = ic; renderCatIconGrid(); }
+
+function saveCategory() {
+  const name = document.getElementById('catNewName').value.trim();
+  if (!name) { showToast('请输入分类名称'); return; }
+  const cats = loadCats();
+  if (cats.some(c => c.name === name)) { showToast('分类已存在'); return; }
+  cats.push({ id: genId(), name, icon: selectedIcon });
+  saveCats(cats);
+  document.getElementById('catNewName').value = '';
+  selectedIcon = '📁';
+  renderCatManageList(); renderCatIconGrid(); renderCatNav();
+  showToast('已添加分类');
+}
+
+function deleteCat(catId) {
+  const items = loadItems();
+  const cnt = items.filter(it => it.categoryId === catId).length;
+  const msg = cnt > 0 ? '删除后该分类下 ' + cnt + ' 个项目将变为未分类，确定？' : '确定删除该分类？';
+  if (!confirm(msg)) return;
+  items.forEach(it => { if (it.categoryId === catId) it.categoryId = null; });
+  saveItems(items);
+  const cats = loadCats().filter(c => c.id !== catId);
+  saveCats(cats);
+  if (currentCatId === catId) currentCatId = null;
+  renderCatManageList(); renderCatNav(); renderList(); renderAlerts();
+  showToast('已删除分类');
+}
+
+function renderCatSelector() {
+  const cats = loadCats();
+  document.getElementById('catSelectorTabs').innerHTML = cats.map(cat => '<div class="cat-icon-option ' + (cat.id === selectedCatForItem ? 'selected' : '') + '" onclick="selectItemCat(\'' + cat.id + '\')" title="' + cat.name + '">' + cat.icon + '</div>').join('');
+}
+function selectItemCat(catId) { selectedCatForItem = catId; renderCatSelector(); }
+
+// === 渲染 ===
+function render() { renderCatNav(); renderAlerts(); renderList(); }
+
+function getFilteredItems() {
+  const items = loadItems();
+  return currentCatId === null ? items : items.filter(it => it.categoryId === currentCatId);
+}
+
+function renderAlerts() {
+  const el = document.getElementById('alertBanners');
+  const banners = [];
+  getFilteredItems().forEach(item => {
+    if (!item.limit || item.limit <= 0) return;
+    const pct = (item.used / item.limit) * 100;
+    if (pct >= 100) banners.push('<div class="alert-banner">⚠️ <strong>' + item.name + '</strong> 已超出上限！已用 ' + fmt(item.used) + item.unit + ' / ' + fmt(item.limit) + item.unit + '</div>');
+    else if (pct >= (item.warnPct || 80)) banners.push('<div class="alert-banner warn">⚡ <strong>' + item.name + '</strong> 已达 ' + Math.round(pct) + '%，剩余 ' + fmt(item.limit - item.used) + item.unit + '</div>');
+  });
+  el.innerHTML = banners.join('');
+}
+
+function renderList() {
+  const el = document.getElementById('itemsList');
+  const items = getFilteredItems();
+  if (items.length === 0) {
+    const msg = currentCatId !== null ? '该分类下没有项目' : '还没有项目';
+    el.innerHTML = '<div class="card empty"><div class="empty-icon">' + (currentCatId !== null ? '📂' : '📊') + '</div><div class="empty-text">' + msg + '<br>点击下方按钮添加吧</div></div>';
+    return;
+  }
+  el.innerHTML = items.map(item => {
+    const pct = item.limit > 0 ? Math.min((item.used / item.limit) * 100, 100) : 0;
+    const over = item.used > item.limit && item.limit > 0;
+    const warn = item.limit > 0 && pct >= (item.warnPct || 80) && !over;
+    const fillColor = over ? 'var(--danger)' : warn ? 'var(--warning)' : 'var(--primary)';
+    const tagHtml = over ? '<span class="tag tag-danger">已超限</span>' : warn ? '<span class="tag tag-warn">预警中</span>' : '';
+    const pctDisplay = item.limit > 0 ? Math.round((item.used / item.limit) * 100) + '%' : '';
+    const cat = item.categoryId ? findCat(item.categoryId) : null;
+    const catBadge = cat && currentCatId === null ? '<span class="tag" style="background:var(--primary-light);margin-left:4px">' + cat.icon + '</span>' : '';
+    return '<div class="card"><div class="item"><div class="item-info" onclick="openLog(\'' + item.id + '\')" style="cursor:pointer"><div class="item-name">' + item.name + ' ' + tagHtml + catBadge + '</div><div class="item-meta">上限 ' + fmt(item.limit) + item.unit + (cat && currentCatId !== null ? ' · ' + cat.icon + cat.name : '') + ' · 已用 ' + fmt(item.used) + item.unit + '</div><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + fillColor + '"></div></div>' + (over ? '<div class="progress-text" style="color:var(--danger)">超出 ' + fmt(item.used - item.limit) + item.unit + '</div>' : '<div class="progress-text">剩余 ' + fmt(Math.max(item.limit - item.used, 0)) + item.unit + ' ' + pctDisplay + '</div>') + '</div></div><div style="display:flex;gap:6px;flex-direction:column"><button class="btn btn-sm btn-primary" onclick="openLog(\'' + item.id + '\')">记录</button><button class="btn btn-sm" onclick="openReset(\'' + item.id + '\')" style="background:var(--bg);color:var(--text-sec)">⋯</button></div></div></div>';
+  }).join('');
+}
+
+// === 添加/编辑项目 ===
+let editingItemId = null;
+
+function openAdd() {
+  editingItemId = null;
+  selectedCatForItem = currentCatId;
+  document.getElementById('addTitle').textContent = '添加新项目';
+  document.getElementById('fName').value = '';
+  document.getElementById('fLimit').value = '';
+  document.getElementById('fUnit').value = 'GB';
+  document.getElementById('fWarn').value = '';
+  document.getElementById('customUnitRow').style.display = 'none';
+  renderCatSelector();
+  document.getElementById('addOverlay').classList.add('active');
+  setTimeout(() => document.getElementById('fName').focus(), 300);
+}
+
+function openEdit(item) {
+  editingItemId = item.id;
+  selectedCatForItem = item.categoryId;
+  document.getElementById('addTitle').textContent = '编辑项目';
+  document.getElementById('fName').value = item.name;
+  document.getElementById('fLimit').value = item.limit;
+  const u = ['GB','MB','KB','元','度','分钟','GB/月','次'];
+  if (u.includes(item.unit)) document.getElementById('fUnit').value = item.unit;
+  else { document.getElementById('fUnit').value = 'custom'; document.getElementById('customUnitRow').style.display = 'flex'; document.getElementById('fCustomUnit').value = item.unit; }
+  document.getElementById('fWarn').value = item.warnPct || '';
+  renderCatSelector();
+  document.getElementById('addOverlay').classList.add('active');
+}
+function closeAdd() { document.getElementById('addOverlay').classList.remove('active'); }
+
+function saveItem() {
+  const name = document.getElementById('fName').value.trim();
+  const limit = parseFloat(document.getElementById('fLimit').value) || 0;
+  let unit = document.getElementById('fUnit').value;
+  if (unit === 'custom') unit = document.getElementById('fCustomUnit').value.trim() || '单位';
+  const warnPct = parseInt(document.getElementById('fWarn').value) || 80;
+  if (!name) { showToast('请填写名称'); return; }
+  if (limit <= 0) { showToast('请填写上限数值'); return; }
+  const items = loadItems();
+  if (editingItemId) {
+    const idx = findItemIdx(editingItemId);
+    if (idx >= 0) items[idx] = Object.assign({}, items[idx], { name, limit, unit, warnPct, categoryId: selectedCatForItem });
+    showToast('已更新');
+  } else {
+    items.push({ id: genId(), name, limit, unit, used: 0, warnPct, logs: [], categoryId: selectedCatForItem, createdAt: Date.now() });
+    showToast('已添加');
+  }
+  saveItems(items); closeAdd(); renderCatNav(); render();
+}
+
+// === 录入用量 ===
+let loggingItemId = null;
+function openLog(itemId) {
+  loggingItemId = itemId;
+  const items = loadItems();
+  const idx = items.findIndex(it => it.id === itemId);
+  if (idx < 0) return;
+  document.getElementById('logTitle').textContent = '记录：' + items[idx].name;
+  document.getElementById('logUnitLabel').textContent = items[idx].unit;
+  document.getElementById('logAmount').value = '';
+  document.getElementById('logNote').value = '';
+  document.getElementById('logOverlay').classList.add('active');
+  setTimeout(() => document.getElementById('logAmount').focus(), 300);
+}
+function closeLog() { document.getElementById('logOverlay').classList.remove('active'); loggingItemId = null; }
+
+function saveLog() {
+  const amount = parseFloat(document.getElementById('logAmount').value);
+  const note = document.getElementById('logNote').value.trim();
+  if (isNaN(amount) || amount < 0) { showToast('请输入有效数值'); return; }
+  const items = loadItems();
+  const idx = items.findIndex(it => it.id === loggingItemId);
+  if (idx < 0) return;
+  items[idx].used += amount;
+  if (!items[idx].logs) items[idx].logs = [];
+  items[idx].logs.push({ time: Date.now(), value: amount, note });
+  if (items[idx].logs.length > 30) items[idx].logs = items[idx].logs.slice(-30);
+  saveItems(items); autoBackup(); closeLog(); renderCatNav(); render();
+  const item = items[idx];
+  if (item.limit > 0 && (item.used / item.limit) * 100 >= 100) showToast('⚠️ 已超出上限！');
+  else if (item.limit > 0 && (item.used / item.limit) * 100 >= (item.warnPct || 80)) showToast('⚡ 接近上限了');
+  else showToast('已记录');
+}
+
+// === 重置/删除 ===
+let resettingItemId = null;
+function openReset(itemId) { resettingItemId = itemId; document.getElementById('resetOverlay').classList.add('active'); }
+function closeReset() { document.getElementById('resetOverlay').classList.remove('active'); resettingItemId = null; }
+function resetUsage(type) {
+  const items = loadItems();
+  const idx = items.findIndex(it => it.id === resettingItemId);
+  if (idx < 0) return;
+  if (type === 'zero') {
+    items[idx].used = 0; items[idx].logs = [];
+    if (!items[idx].resetHistory) items[idx].resetHistory = [];
+    items[idx].resetHistory.push({ time: Date.now() });
+    saveItems(items); closeReset(); renderCatNav(); render(); showToast('已清零，新周期开始');
+  } else {
+    items.splice(idx, 1); saveItems(items); closeReset(); renderCatNav(); render(); showToast('已删除');
+  }
+}
+
+// 单位联动
+document.getElementById('fUnit').addEventListener('change', function() {
+  document.getElementById('customUnitRow').style.display = this.value === 'custom' ? 'flex' : 'none';
+});
+
+// 点击遮罩关闭
+['addOverlay','logOverlay','resetOverlay','backupOverlay','catOverlay','autoBackupOverlay','restoreConfirmOverlay'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) {
+      if (id === 'addOverlay') closeAdd();
+      else if (id === 'logOverlay') closeLog();
+      else if (id === 'resetOverlay') closeReset();
+      else if (id === 'backupOverlay') closeBackup();
+      else if (id === 'catOverlay') closeCat();
+      else if (id === 'autoBackupOverlay') closeAutoBackupList();
+      else if (id === 'restoreConfirmOverlay') cancelRestoreAuto();
+    }
+  });
+});
+
+// === 自动备份 ===
+function autoBackup() {
+  const items = loadItems();
+  const cats = loadCats();
+  let backups = [];
+  try { backups = JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY)) || []; } catch { backups = []; }
+  backups.unshift({ time: Date.now(), items, cats });
+  if (backups.length > 10) backups = backups.slice(0, 10);
+  localStorage.setItem(AUTO_BACKUP_KEY, JSON.stringify(backups));
+  if (localStorage.getItem(AUTO_DL_KEY) === '1') autoDownloadBackup(items, cats);
+}
+
+function autoDownloadBackup(items, cats) {
+  const backup = { appName: '流量预警助手', version: '2.0', exportTime: new Date().toISOString(), categories: cats, items };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.getElementById('downloadLink');
+  const d = new Date();
+  const stamp = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '_' + String(d.getHours()).padStart(2,'0') + '-' + String(d.getMinutes()).padStart(2,'0') + '-' + String(d.getSeconds()).padStart(2,'0');
+  a.href = url; a.download = '流量预警_自动备份_' + stamp + '.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function toggleAutoDownload() {
+  const cur = localStorage.getItem(AUTO_DL_KEY);
+  if (cur === '1') {
+    localStorage.removeItem(AUTO_DL_KEY);
+    showToast('已关闭自动存本地');
+  } else {
+    localStorage.setItem(AUTO_DL_KEY, '1');
+    showToast('已开启自动存本地，每次记录后自动下载备份');
+  }
+  updateAutoDlUI();
+}
+
+function showAutoBackups() {
+  let backups = [];
+  try { backups = JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY)) || []; } catch { backups = []; }
+  if (backups.length === 0) { showToast('暂无自动备份'); return; }
+  const list = document.getElementById('autoBackupList');
+  list.innerHTML = backups.map((b, i) => {
+    const d = new Date(b.time);
+    const t = d.getMonth() + 1 + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+    const itms = b.items || [];
+    const cats = b.cats || [];
+    return '<div class="backup-row" onclick="confirmRestoreAuto(' + i + ')"><div class="backup-row-info"><div class="backup-row-title">' + t + '</div><div class="backup-row-desc">' + itms.length + ' 项 / ' + cats.length + ' 分类</div></div><span style="color:var(--success);font-size:13px">恢复 →</span></div>';
+  }).join('');
+  closeBackup();
+  document.getElementById('autoBackupOverlay').classList.add('active');
+}
+function confirmRestoreAuto(idx) {
+  pendingRestoreIdx = idx;
+  document.getElementById('restoreConfirmMsg').textContent = '确定用第 ' + idx + ' 号备份覆盖当前数据？当前数据将丢失！';
+  document.getElementById('restoreConfirmOverlay').classList.add('active');
+}
+function doRestoreAuto() {
+  let backups = [];
+  try { backups = JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY)) || []; } catch { backups = []; }
+  if (pendingRestoreIdx < 0 || pendingRestoreIdx >= backups.length) { showToast('恢复失败'); return; }
+  const b = backups[pendingRestoreIdx];
+  saveItems(b.items);
+  saveCats(b.cats);
+  currentCatId = null;
+  renderCatNav(); render();
+  document.getElementById('restoreConfirmOverlay').classList.remove('active');
+  document.getElementById('autoBackupOverlay').classList.remove('active');
+  showToast('已恢复备份：' + new Date(b.time).toLocaleString('zh-CN'));
+  pendingRestoreIdx = -1;
+}
+function cancelRestoreAuto() {
+  document.getElementById('restoreConfirmOverlay').classList.remove('active');
+  pendingRestoreIdx = -1;
+}
+function closeAutoBackupList() {
+  document.getElementById('autoBackupOverlay').classList.remove('active');
+}
+
+// === 数据管理 ===
+function showBackupSheet() { updateBackupStats(); updateAutoBackupUI(); updateAutoDlUI(); document.getElementById('backupOverlay').classList.add('active'); }
+
+function updateAutoBackupUI() {
+  let backups = [];
+  try { backups = JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY)) || []; } catch { backups = []; }
+  const countEl = document.getElementById('autoBackupCount');
+  const descEl = document.getElementById('autoBackupDesc');
+  if (countEl) countEl.textContent = backups.length + ' 条';
+  if (descEl && backups.length > 0) {
+    const last = new Date(backups[0].time);
+    descEl.textContent = '最近：' + last.toLocaleString('zh-CN');
+  }
+}
+
+function updateAutoDlUI() {
+  const toggle = document.getElementById('autoDlToggle');
+  const desc = document.getElementById('autoDlDesc');
+  if (!toggle) return;
+  if (localStorage.getItem(AUTO_DL_KEY) === '1') {
+    toggle.textContent = '开启';
+    toggle.style.color = 'var(--success)';
+    if (desc) desc.style.color = 'var(--success)';
+  } else {
+    toggle.textContent = '关闭';
+    toggle.style.color = 'var(--text-sec)';
+    if (desc) desc.style.color = 'var(--text-sec)';
+  }
+}
+
+
+function closeBackup() { document.getElementById('backupOverlay').classList.remove('active'); }
+
+function updateBackupStats() {
+  const items = loadItems();
+  const cats = loadCats();
+  const totalRecords = items.reduce((s, it) => s + (it.logs ? it.logs.length : 0), 0);
+  const sizeKB = (new Blob([JSON.stringify({ items, categories: cats })]).size / 1024).toFixed(1);
+  document.getElementById('statCount').textContent = items.length;
+  const recordsEl = document.getElementById('statRecords');
+  if (recordsEl) recordsEl.textContent = totalRecords;
+  const sizeEl = document.getElementById('statSize');
+  if (sizeEl) sizeEl.textContent = sizeKB + 'KB';
+  // add category stat
+  const statsEl = document.querySelector('.backup-stats');
+  if (statsEl && !document.getElementById('statCats')) {
+    const div = document.createElement('div');
+    div.className = 'stat-box';
+    div.id = 'statCats';
+    div.innerHTML = '<div class="stat-num">' + cats.length + '</div><div class="stat-label">分类数</div>';
+    statsEl.appendChild(div);
+  } else if (document.getElementById('statCats')) {
+    document.querySelector('#statCats .stat-num').textContent = cats.length;
+  }
+}
+
+function exportJSON() {
+  const items = loadItems();
+  const cats = loadCats();
+  if (items.length === 0 && cats.length === 0) { showToast('没有数据可导出'); return; }
+  const backup = { appName: '流量预警助手', version: '2.0', exportTime: new Date().toISOString(), categories: cats, items };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.getElementById('downloadLink');
+  a.href = url; a.download = '流量预警备份_' + new Date().toLocaleDateString('en-CA') + '.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ 已导出备份（' + cats.length + ' 分类 / ' + items.length + ' 项目）');
+}
+
+function exportCSV() {
+  const items = loadItems();
+  if (items.length === 0) { showToast('没有数据可导出'); return; }
+  const cats = loadCats();
+  const getCat = id => { const c = cats.find(x => x.id === id); return c ? c.icon + c.name : '-'; };
+  let csv = '﻿项目,分类,单位,上限,已用,使用率,预警阈值,创建时间\n';
+  items.forEach(it => {
+    const pct = it.limit > 0 ? ((it.used / it.limit) * 100).toFixed(1) + '%' : '-';
+    const created = it.createdAt ? new Date(it.createdAt).toLocaleDateString('zh-CN') : '-';
+    csv += '"' + it.name + '","' + getCat(it.categoryId) + '","' + it.unit + '",' + it.limit + ',' + it.used + ',' + pct + ',' + (it.warnPct || 80) + '%,' + created + '\n';
+  });
+  csv += '\n\n--- 详细记录 ---\n项目,时间,数值,备注\n';
+  items.forEach(it => (it.logs || []).forEach(log => csv += '"' + it.name + '",' + new Date(log.time).toLocaleString('zh-CN') + ',' + log.value + ',"' + (log.note || '') + '"\n'));
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.getElementById('downloadLink');
+  a.href = url; a.download = '流量预警数据_' + new Date().toLocaleDateString('en-CA') + '.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ 已导出 CSV');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      let items = [], cats = [];
+      if (data.appName && data.items) { items = data.items; cats = data.categories || []; }
+      else if (Array.isArray(data)) { items = data; }
+      else { showToast('备份文件格式不正确'); return; }
+      if (items.length === 0 && cats.length === 0) { showToast('备份中没有数据'); return; }
+      const cur = loadItems();
+      if (cur.length > 0 && items.length > 0) {
+        if (confirm('当前已有 ' + cur.length + ' 个项目。\n\n确定 = 合并（同名跳过）\n取消 = 全部覆盖')) {
+          let added = 0;
+          items.forEach(ni => { if (!cur.some(c => c.name === ni.name)) { cur.push(ni); added++; } });
+          saveItems(cur); if (cats.length > 0) saveCats(cats);
+          renderCatNav(); render(); closeBackup(); showToast('已合并 ' + added + ' 个项目');
+        } else {
+          if (confirm('确定覆盖现有 ' + cur.length + ' 个项目？⚠️ 数据将丢失！')) {
+            saveItems(items); if (cats.length > 0) saveCats(cats);
+            renderCatNav(); render(); closeBackup(); showToast('已覆盖导入 ' + items.length + ' 个项目');
+          }
+        }
+      } else if (items.length > 0) {
+        saveItems(items); if (cats.length > 0) saveCats(cats);
+        renderCatNav(); render(); closeBackup(); showToast('✅ 已导入 ' + items.length + ' 个项目');
+      } else if (cats.length > 0) {
+        saveCats(cats); renderCatNav(); closeBackup(); showToast('✅ 已导入 ' + cats.length + ' 个分类');
+      }
+    } catch(err) { showToast('文件读取失败：' + err.message); }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  const items = loadItems();
+  const cats = loadCats();
+  if (items.length === 0 && cats.length === 0) { showToast('当前没有数据'); return; }
+  const catCount = cats.length > 1 ? cats.length - 1 : 0;
+  const msg = '确定清除全部数据？\n\n' + items.length + ' 个项目' + (catCount > 0 ? ' + ' + catCount + ' 个自定义分类' : '') + '\n⚠️ 此操作不可恢复！';
+  if (confirm(msg)) {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(CATS_KEY);
+    currentCatId = null; closeBackup(); renderCatNav(); render();
+    showToast('已清除全部数据');
+  }
+}
+
+// 初始化 — 迁移旧数据（categoryId='default' → null）
+(function() {
+  const items = loadItems();
+  let changed = false;
+  items.forEach(it => { if (it.categoryId === 'default') { it.categoryId = null; changed = true; } });
+  if (changed) saveItems(items);
+  const cats = loadCats();
+  const mig = cats.filter(c => c.id !== 'default');
+  if (mig.length !== cats.length) { saveCats(mig); }
+})();
+render();
+</script>
+</body>
+</html>
